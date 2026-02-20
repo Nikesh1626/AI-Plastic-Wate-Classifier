@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Plastic Waste Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        video, canvas {
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>♻️ AI Plastic Waste Classifier</h1>
+
+    <video id="video" width="320" height="240" autoplay></video><br>
+    <button onclick="captureImage()">Capture & Classify</button>
+
+    <canvas id="canvas" width="224" height="224" style="display:none;"></canvas>
+
+    <div id="result"></div>
+
+    <script src="{{ url_for('static', filename='js/webcam.js') }}"></script>
+
+</body>
+</html>

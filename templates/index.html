@@ -1,47 +1,493 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Plastic Waste Classifier</title>
+
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f4f4f4;
-            padding: 20px;
+      :root {
+        --green-dark: #1b5e20;
+        --green-mid: #2e7d32;
+        --green-light: #4caf50;
+        --teal: #00897b;
+        --teal-light: #e0f2f1;
+      }
+
+      /* ── Body ── */
+      body {
+        background: linear-gradient(150deg, #e8f5e9 0%, #e0f7fa 100%);
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+
+      /* ── Header ── */
+      .app-header {
+        background: linear-gradient(
+          135deg,
+          var(--green-dark),
+          var(--green-mid)
+        );
+        color: #fff;
+        padding: 2rem 1rem 1.75rem;
+        text-align: center;
+        border-radius: 0 0 2rem 2rem;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+        margin-bottom: 2rem;
+      }
+      .app-header h1 {
+        font-size: clamp(1.4rem, 5vw, 2.4rem);
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      .app-header p {
+        opacity: 0.8;
+        margin: 0;
+      }
+
+      /* ── Cards ── */
+      .card {
+        border: none;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      }
+      .card-header {
+        background: linear-gradient(
+          135deg,
+          var(--green-mid),
+          var(--green-light)
+        );
+        color: #fff;
+        font-weight: 600;
+        border-radius: 1.25rem 1.25rem 0 0 !important;
+        padding: 0.85rem 1.25rem;
+      }
+
+      /* ── Mode-switch pills ── */
+      .mode-pill .nav-link {
+        border-radius: 2rem !important;
+        color: #555;
+        padding: 0.4rem 1.1rem;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+      }
+      .mode-pill .nav-link.active {
+        background: var(--green-mid);
+        color: #fff;
+      }
+
+      /* ── Video ── */
+      #videoPreview {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+        border-radius: 0.75rem;
+        background: #111;
+        display: block;
+      }
+
+      /* ── Upload drop zone ── */
+      #dropZone {
+        border: 2px dashed #adb5bd;
+        border-radius: 0.75rem;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        cursor: pointer;
+      }
+      #dropZone:hover,
+      #dropZone.drag-over {
+        border-color: var(--green-light);
+        background: #f1f8f1;
+      }
+
+      #imagePreview {
+        width: 100%;
+        max-height: 280px;
+        object-fit: contain;
+        border-radius: 0.75rem;
+        display: none;
+        margin-top: 0.75rem;
+      }
+
+      /* ── Hidden canvas ── */
+      #captureCanvas {
+        display: none;
+      }
+
+      /* ── Confidence bar ── */
+      .confidence-bar {
+        height: 14px;
+        border-radius: 7px;
+      }
+
+      /* ── Plastic badge ── */
+      .plastic-badge {
+        font-size: 1.6rem;
+        font-weight: 700;
+        padding: 0.45rem 1.6rem;
+        border-radius: 2rem;
+        letter-spacing: 1px;
+      }
+
+      /* ── AI advice box ── */
+      .ai-advice-box {
+        background: linear-gradient(135deg, #e8f5e9, var(--teal-light));
+        border-left: 4px solid var(--teal);
+        border-radius: 0.5rem;
+        padding: 1rem 1.1rem;
+        line-height: 1.7;
+      }
+
+      /* ── Loading spinner ── */
+      #loadingSpinner {
+        display: none;
+      }
+
+      /* ── Map ── */
+      #map {
+        height: 420px;
+        border-radius: 0 0 1.25rem 1.25rem;
+        display: none;
+      }
+      #mapPlaceholder {
+        padding: 3rem 1rem;
+        text-align: center;
+      }
+      #mapStatusMsg {
+        padding: 1rem;
+        text-align: center;
+        display: none;
+      }
+
+      /* ── Result / placeholder card ── */
+      #resultCard {
+        display: none;
+      }
+      #placeholderCard {
+        text-align: center;
+        padding: 2.5rem 1rem;
+      }
+
+      /* ── Responsive tweaks ── */
+      @media (max-width: 576px) {
+        .app-header {
+          padding: 1.25rem 0.75rem 1rem;
         }
-        video, canvas {
-            border: 2px solid #333;
-            border-radius: 8px;
+        .card-body {
+          padding: 1rem;
         }
-        button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        #result {
-            margin-top: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            display: inline-block;
-            text-align: left;
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- ╔══════════════════════╗
+       ║      HEADER          ║
+       ╚══════════════════════╝ -->
+    <div class="app-header">
+      <h1>♻️ AI Plastic Waste Classifier</h1>
+      <p>Identify plastic types &amp; recycle responsibly with AI</p>
+    </div>
 
-    <h1>♻️ AI Plastic Waste Classifier</h1>
+    <div class="container pb-5">
+      <div class="row g-4">
+        <!-- ╔══════════════════════════╗
+           ║   INPUT CARD (left col)  ║
+           ╚══════════════════════════╝ -->
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+              <i class="bi bi-camera2"></i>
+              <span>Classify Plastic</span>
+            </div>
 
-    <video id="video" width="320" height="240" autoplay></video><br>
-    <button onclick="captureImage()">Capture & Classify</button>
+            <div class="card-body">
+              <!-- Mode switch -->
+              <ul
+                class="nav mode-pill justify-content-center mb-3"
+                id="modeTabs"
+              >
+                <li class="nav-item">
+                  <button
+                    class="nav-link active"
+                    id="cameraTabBtn"
+                    onclick="switchMode('camera')"
+                  >
+                    <i class="bi bi-camera me-1"></i>Camera
+                  </button>
+                </li>
+                <li class="nav-item">
+                  <button
+                    class="nav-link"
+                    id="uploadTabBtn"
+                    onclick="switchMode('upload')"
+                  >
+                    <i class="bi bi-upload me-1"></i>Upload
+                  </button>
+                </li>
+              </ul>
 
-    <canvas id="canvas" width="224" height="224" style="display:none;"></canvas>
+              <!-- ── Camera section ── -->
+              <div id="cameraMode">
+                <video id="videoPreview" autoplay playsinline muted></video>
+                <div class="d-grid mt-3">
+                  <button
+                    class="btn btn-success btn-lg"
+                    id="captureBtn"
+                    onclick="captureAndClassify()"
+                  >
+                    <i class="bi bi-camera-fill me-2"></i>Capture &amp; Classify
+                  </button>
+                </div>
+              </div>
 
-    <div id="result"></div>
+              <!-- ── Upload section ── -->
+              <div id="uploadMode" style="display: none">
+                <div
+                  id="dropZone"
+                  class="text-center p-4"
+                  ondragover="handleDragOver(event)"
+                  ondragleave="handleDragLeave()"
+                  ondrop="handleDrop(event)"
+                >
+                  <i class="bi bi-cloud-upload fs-1 text-success"></i>
+                  <p class="text-muted mt-2 mb-1">
+                    Drag &amp; drop an image here, or
+                  </p>
+                  <label class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-folder2-open me-1"></i>Browse File
+                    <input
+                      type="file"
+                      id="fileInput"
+                      accept=".jpg,.jpeg,.png"
+                      style="display: none"
+                      onchange="handleFileSelect(event)"
+                    />
+                  </label>
+                  <p class="text-muted small mt-2 mb-0">
+                    Accepted: JPG, JPEG, PNG
+                  </p>
+                </div>
+                <img id="imagePreview" alt="Selected image preview" />
+                <div class="d-grid mt-3">
+                  <button
+                    class="btn btn-success btn-lg"
+                    id="classifyUploadBtn"
+                    onclick="classifyUpload()"
+                    disabled
+                  >
+                    <i class="bi bi-search me-2"></i>Classify Image
+                  </button>
+                </div>
+              </div>
 
-    <script src="{{ url_for('static', filename='js/webcam.js') }}"></script>
+              <!-- ── Loading spinner ── -->
+              <div class="text-center mt-3" id="loadingSpinner">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Classifying…</span>
+                </div>
+                <p class="text-muted small mt-2">Analysing plastic type…</p>
+              </div>
+            </div>
+            <!-- /card-body -->
+          </div>
+          <!-- /card -->
+        </div>
+        <!-- /col -->
 
-</body>
+        <!-- ╔═══════════════════════════╗
+           ║   RESULT CARD (right col) ║
+           ╚═══════════════════════════╝ -->
+        <div class="col-lg-6">
+          <!-- Result (shown after prediction) -->
+          <div class="card" id="resultCard">
+            <div class="card-header d-flex align-items-center gap-2">
+              <i class="bi bi-bar-chart-fill"></i>
+              <span>Classification Result</span>
+            </div>
+            <div class="card-body">
+              <!-- Plastic type + confidence -->
+              <div class="text-center mb-3">
+                <span
+                  class="badge bg-success plastic-badge"
+                  id="plasticTypeLabel"
+                  >—</span
+                >
+                <div class="mt-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <small class="fw-semibold text-muted">Confidence</small>
+                    <small class="fw-bold text-success" id="confidenceText"
+                      >0%</small
+                    >
+                  </div>
+                  <div class="progress confidence-bar">
+                    <div
+                      class="progress-bar bg-success transition-all"
+                      id="confidenceBar"
+                      role="progressbar"
+                      style="width: 0%"
+                      aria-valuenow="0"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-3" />
+
+              <!-- Tab group: Reuse | Recycle | AI Advice -->
+              <ul class="nav nav-tabs" id="resultNavTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link active"
+                    id="reuse-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#reuseTab"
+                    type="button"
+                    role="tab"
+                  >
+                    <i class="bi bi-recycle me-1"></i>Reuse
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="recycle-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#recycleTab"
+                    type="button"
+                    role="tab"
+                  >
+                    <i class="bi bi-trash3 me-1"></i>Recycle
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="ai-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#aiTab"
+                    type="button"
+                    role="tab"
+                  >
+                    <i class="bi bi-stars me-1"></i>AI Advice
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content pt-3">
+                <div
+                  class="tab-pane fade show active"
+                  id="reuseTab"
+                  role="tabpanel"
+                >
+                  <ul class="list-unstyled mb-0" id="reuseList"></ul>
+                </div>
+                <div class="tab-pane fade" id="recycleTab" role="tabpanel">
+                  <p class="mb-0" id="recycleInfo"></p>
+                </div>
+                <div class="tab-pane fade" id="aiTab" role="tabpanel">
+                  <div class="ai-advice-box">
+                    <div class="d-flex align-items-start gap-2">
+                      <i
+                        class="bi bi-stars text-teal fs-5 mt-1 flex-shrink-0"
+                        style="color: var(--teal)"
+                      ></i>
+                      <div id="aiAdviceText" style="font-size: 0.92rem"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /card-body -->
+          </div>
+          <!-- /resultCard -->
+
+          <!-- Placeholder (before any prediction) -->
+          <div class="card" id="placeholderCard">
+            <div class="card-body">
+              <i class="bi bi-arrow-left-circle display-4 text-muted"></i>
+              <p class="text-muted mt-3 mb-0">
+                Capture an image or upload a photo of a plastic item to see its
+                classification, reuse ideas, and AI-powered recycling advice.
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- /col -->
+
+        <!-- ╔═══════════════════════╗
+           ║   MAP CARD (full width)║
+           ╚═══════════════════════╝ -->
+        <div class="col-12">
+          <div class="card">
+            <div
+              class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2"
+            >
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span>Nearby Recycling Centres</span>
+              </div>
+              <button
+                class="btn btn-sm btn-light fw-semibold"
+                onclick="findNearbyRecyclers()"
+              >
+                <i class="bi bi-geo-alt me-1"></i>Find Near Me
+              </button>
+            </div>
+
+            <!-- Default placeholder -->
+            <div id="mapPlaceholder">
+              <i class="bi bi-map display-4 text-muted"></i>
+              <p class="text-muted mt-3">
+                Click <strong>Find Near Me</strong> to discover recycling
+                centres near your location.
+              </p>
+            </div>
+
+            <!-- Status / loading message -->
+            <div id="mapStatusMsg"></div>
+
+            <!-- Leaflet map (rendered on demand) -->
+            <div id="map"></div>
+          </div>
+          <!-- /card -->
+        </div>
+        <!-- /col -->
+      </div>
+      <!-- /row -->
+    </div>
+    <!-- /container -->
+
+    <!-- Shared hidden canvas for both camera capture and upload resize -->
+    <canvas id="captureCanvas"></canvas>
+
+    <!-- Bootstrap 5 Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- App modules — order matters: app.js first (shared helpers) -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/camera.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+  </body>
 </html>

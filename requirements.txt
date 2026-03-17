@@ -1,0 +1,7 @@
+flask>=2.3
+numpy>=1.24
+opencv-python>=4.8
+tensorflow>=2.13
+requests>=2.31
+openai>=1.40
+python-dotenv>=1.0

@@ -14,7 +14,7 @@ function escapeHtml(text) {
 }
 
 /**
- * Converts basic AI markdown to safe HTML for display.
+ * Converts basic Gemini markdown to safe HTML for display.
  * Operates on already-escaped text so only the markdown tokens are trusted.
  */
 function markdownToHtml(raw) {
@@ -103,7 +103,7 @@ function displayResult(data) {
   document.getElementById("recycleInfo").innerHTML =
     `<i class="bi bi-recycle text-success me-2"></i>${escapeHtml(data.recycle || "")}`;
 
-  // AI advice — markdown converted to safe HTML
+  // AI advice — Gemini markdown converted to safe HTML
   const aiText = document.getElementById("aiAdviceText");
   if (data.ai_advice) {
     aiText.innerHTML = markdownToHtml(data.ai_advice);

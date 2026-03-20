@@ -1,12 +1,11 @@
 import os
-from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 import numpy as np
 import cv2
 import base64
 from tensorflow.keras.models import load_model
 from plastic_info import plastic_info
-from services.chatgpt_service import get_recycling_advice
+from services.gemini_service import get_recycling_advice
 from services.recycler_service import get_nearby_recyclers
 
 try:
@@ -15,8 +14,7 @@ except ImportError:
     load_dotenv = None
 
 if load_dotenv is not None:
-    env_path = Path(__file__).resolve().parent / ".env"
-    load_dotenv(dotenv_path=env_path, override=True)
+    load_dotenv()
 
 app = Flask(__name__)
 

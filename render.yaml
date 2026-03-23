@@ -14,7 +14,7 @@ services:
       - key: MAX_CONTENT_LENGTH_MB
         value: "8"
       - key: RECYCLER_RADIUS_METERS
-        value: "5000"
+        value: "50000"
       - key: GEMINI_MODEL
         value: gemini-flash-latest
       - key: GEMINI_LIGHT_MODEL

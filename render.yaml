@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: plastic-ai-project
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 180
+    autoDeploy: true
+    envVars:
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: MODEL_PATH
+        value: plastic-ai-project/model/plastic_model.h5
+      - key: MAX_CONTENT_LENGTH_MB
+        value: "8"
+      - key: RECYCLER_RADIUS_METERS
+        value: "5000"
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+      - key: GEMINI_LIGHT_MODEL
+        value: gemini-flash-lite-latest
+      - key: GEMINI_API_KEY
+        sync: false

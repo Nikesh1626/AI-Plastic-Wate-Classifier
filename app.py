@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, render_template, request, jsonify
 import numpy as np
 import cv2
@@ -16,10 +17,15 @@ if load_dotenv is not None:
     load_dotenv()
 
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
+
+# Reject oversized payloads early (default 8 MB, configurable via env).
+MAX_CONTENT_LENGTH_MB = max(1, int(os.environ.get("MAX_CONTENT_LENGTH_MB", "8")))
+app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH_MB * 1024 * 1024
 
 # Load trained model path from environment, fallback to project default
 MODEL_PATH = os.environ.get("MODEL_PATH", "plastic-ai-project/model/plastic_model.h5")
-FLASK_DEBUG = os.environ.get("FLASK_DEBUG", "true").strip().lower() in {
+FLASK_DEBUG = os.environ.get("FLASK_DEBUG", "false").strip().lower() in {
     "1",
     "true",
     "yes",
@@ -43,12 +49,17 @@ def index():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.json["image"]
+        body = request.get_json(silent=True) or {}
+        data = body.get("image")
+        if not isinstance(data, str) or "," not in data:
+            return jsonify({"error": "Invalid image payload."}), 400
 
         # Decode base64 image
         img_data = base64.b64decode(data.split(",")[1])
         np_img = np.frombuffer(img_data, np.uint8)
         img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Unable to decode image."}), 400
 
         # Preprocess
         img = cv2.resize(img, (224, 224))
@@ -71,14 +82,15 @@ def predict():
             "ai_advice": guidance.get("ai_advice", ""),
         })
 
-    except Exception as e:
-        return jsonify({"error": str(e)})
+    except Exception:
+        app.logger.exception("Prediction failed")
+        return jsonify({"error": "Prediction failed. Please try again."}), 500
 
 
 @app.route("/recyclers", methods=["POST"])
 def recyclers():
     try:
-        body = request.json
+        body = request.get_json(silent=True) or {}
         lat = float(body["latitude"])
         lon = float(body["longitude"])
 
@@ -95,8 +107,9 @@ def recyclers():
         return jsonify(results)
     except (KeyError, TypeError, ValueError) as e:
         return jsonify({"error": f"Invalid request: {e}"}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        app.logger.exception("Recycler lookup failed")
+        return jsonify({"error": "Unable to fetch recycling centres right now."}), 500
 
 
 @app.route("/home-insights", methods=["GET"])
@@ -109,8 +122,21 @@ def home_insights():
         })
         response.headers["Cache-Control"] = "no-store"
         return response
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        app.logger.exception("Home insights failed")
+        return jsonify({"error": "Unable to load insights right now."}), 500
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "geolocation=(self), camera=(self)",
+    )
+    return response
 
 
 if __name__ == "__main__":

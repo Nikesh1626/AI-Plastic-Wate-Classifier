@@ -2,6 +2,7 @@
 // Depends on: Leaflet.js (loaded via CDN in index.html)
 
 let leafletMap = null;
+let initialMapPlaceholderHtml = null;
 
 /**
  * Initialises (or re-initialises) the Leaflet map centred on user's location.
@@ -15,7 +16,7 @@ function initMap(lat, lon) {
   }
 
   const mapEl = document.getElementById("map");
-  mapEl.style.display = "block";
+  mapEl.style.display = "none";
 
   leafletMap = L.map("map").setView([lat, lon], 13);
 
@@ -64,6 +65,11 @@ function getRecyclingIcon() {
 function findNearbyRecyclers() {
   const placeholder = document.getElementById("mapPlaceholder");
   const statusMsg = document.getElementById("mapStatusMsg");
+  const mapEl = document.getElementById("map");
+
+  if (!initialMapPlaceholderHtml && placeholder) {
+    initialMapPlaceholderHtml = placeholder.innerHTML;
+  }
 
   if (!navigator.geolocation) {
     placeholder.innerHTML = `
@@ -72,7 +78,8 @@ function findNearbyRecyclers() {
     return;
   }
 
-  placeholder.style.display = "none";
+  placeholder.style.display = "block";
+  mapEl.style.display = "none";
   statusMsg.style.display = "block";
   statusMsg.innerHTML = `
     <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
@@ -87,8 +94,6 @@ function findNearbyRecyclers() {
         <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
         Searching for recycling centres nearby…`;
 
-      initMap(lat, lon);
-
       fetch("/recyclers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,19 +101,21 @@ function findNearbyRecyclers() {
       })
         .then((res) => res.json())
         .then((data) => {
-          statusMsg.style.display = "none";
-
           if (!Array.isArray(data)) {
+            statusMsg.style.display = "none";
             showMapError(data.error || "Unexpected response from server.");
             return;
           }
 
           if (data.length === 0) {
+            statusMsg.style.display = "none";
             showMapError(
               "No recycling centres found within 5 km of your location.",
             );
             return;
           }
+
+          initMap(lat, lon);
 
           const icon = getRecyclingIcon();
           data.forEach((centre) => {
@@ -123,6 +130,11 @@ function findNearbyRecyclers() {
           // Fit map bounds to include all markers + user
           const allLatLngs = [[lat, lon], ...data.map((c) => [c.lat, c.lon])];
           leafletMap.fitBounds(allLatLngs, { padding: [40, 40] });
+
+          placeholder.style.display = "none";
+          mapEl.style.display = "block";
+          statusMsg.style.display = "none";
+          setTimeout(() => leafletMap.invalidateSize(), 150);
         })
         .catch((err) => {
           statusMsg.style.display = "none";
@@ -164,6 +176,10 @@ function resetMapPlaceholder() {
   const statusMsg = document.getElementById("mapStatusMsg");
   const mapEl = document.getElementById("map");
 
+  if (!initialMapPlaceholderHtml && placeholder) {
+    initialMapPlaceholderHtml = placeholder.innerHTML;
+  }
+
   if (leafletMap) {
     leafletMap.remove();
     leafletMap = null;
@@ -171,9 +187,7 @@ function resetMapPlaceholder() {
   mapEl.style.display = "none";
   statusMsg.style.display = "none";
   placeholder.style.display = "block";
-  placeholder.innerHTML = `
-    <i class="bi bi-map display-4 text-muted"></i>
-    <p class="text-muted mt-3">
-      Click <strong>Find Near Me</strong> to discover recycling centres near your location.
-    </p>`;
+  if (initialMapPlaceholderHtml) {
+    placeholder.innerHTML = initialMapPlaceholderHtml;
+  }
 }

@@ -1,490 +1,732 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>AI Plastic Waste Classifier</title>
 
-    <!-- Bootstrap 5 -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <!-- Bootstrap Icons -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
       rel="stylesheet"
     />
-    <!-- Leaflet CSS -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
 
     <style>
-      :root {
-        --green-dark: #1b5e20;
-        --green-mid: #2e7d32;
-        --green-light: #4caf50;
-        --teal: #00897b;
-        --teal-light: #e0f2f1;
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
       }
 
-      /* ── Body ── */
       body {
-        background: linear-gradient(150deg, #e8f5e9 0%, #e0f7fa 100%);
-        min-height: 100vh;
-        font-family: "Segoe UI", system-ui, sans-serif;
+        font-family: "Be Vietnam Pro", sans-serif;
+        background-color: #fafaef;
       }
 
-      /* ── Header ── */
-      .app-header {
-        background: linear-gradient(
-          135deg,
-          var(--green-dark),
-          var(--green-mid)
-        );
-        color: #fff;
-        padding: 2rem 1rem 1.75rem;
-        text-align: center;
-        border-radius: 0 0 2rem 2rem;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-        margin-bottom: 2rem;
-      }
-      .app-header h1 {
-        font-size: clamp(1.4rem, 5vw, 2.4rem);
-        font-weight: 700;
-        letter-spacing: -0.5px;
-      }
-      .app-header p {
-        opacity: 0.8;
-        margin: 0;
+      html {
+        scroll-behavior: smooth;
       }
 
-      /* ── Cards ── */
-      .card {
-        border: none;
-        border-radius: 1.25rem;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
-      }
-      .card-header {
-        background: linear-gradient(
-          135deg,
-          var(--green-mid),
-          var(--green-light)
-        );
-        color: #fff;
-        font-weight: 600;
-        border-radius: 1.25rem 1.25rem 0 0 !important;
-        padding: 0.85rem 1.25rem;
+      h1,
+      h2,
+      h3,
+      .font-headline {
+        font-family: "Plus Jakarta Sans", sans-serif;
       }
 
-      /* ── Mode-switch pills ── */
-      .mode-pill .nav-link {
-        border-radius: 2rem !important;
-        color: #555;
-        padding: 0.4rem 1.1rem;
-        font-size: 0.9rem;
-        transition: background 0.2s;
-      }
-      .mode-pill .nav-link.active {
-        background: var(--green-mid);
-        color: #fff;
+      .glass-panel {
+        background: rgba(250, 250, 239, 0.7);
+        backdrop-filter: blur(20px);
       }
 
-      /* ── Video ── */
+      .organic-gradient {
+        background: linear-gradient(135deg, #006e1c 0%, #4caf50 100%);
+      }
+
+      .hero-action.active {
+        background: linear-gradient(135deg, #006e1c 0%, #4caf50 100%);
+        color: #ffffff;
+        box-shadow: 0 14px 30px -18px rgba(0, 110, 28, 0.75);
+      }
+
+      .scroll-cta {
+        box-shadow: 0 18px 34px -20px rgba(0, 110, 28, 0.8);
+      }
+
+      #cameraMode,
+      #uploadMode {
+        width: 100%;
+      }
+
       #videoPreview {
         width: 100%;
-        max-height: 300px;
+        height: 340px;
+        border-radius: 1.5rem;
         object-fit: cover;
-        border-radius: 0.75rem;
-        background: #111;
-        display: block;
+        background: #0f100f;
       }
 
-      /* ── Upload drop zone ── */
       #dropZone {
-        border: 2px dashed #adb5bd;
-        border-radius: 0.75rem;
-        transition:
-          border-color 0.2s,
-          background 0.2s;
         cursor: pointer;
+        transition:
+          transform 140ms ease,
+          box-shadow 180ms ease,
+          background-color 180ms ease;
       }
-      #dropZone:hover,
-      #dropZone.drag-over {
-        border-color: var(--green-light);
-        background: #f1f8f1;
+
+      #dropZone.border-success {
+        box-shadow: inset 0 0 0 2px rgba(0, 110, 28, 0.48);
+      }
+
+      #dropZone.click-active {
+        transform: scale(0.995);
+        background-color: rgba(228, 228, 204, 0.55);
       }
 
       #imagePreview {
         width: 100%;
-        max-height: 280px;
+        max-height: 340px;
         object-fit: contain;
-        border-radius: 0.75rem;
-        display: none;
-        margin-top: 0.75rem;
-      }
-
-      /* ── Hidden canvas ── */
-      #captureCanvas {
+        border-radius: 1rem;
+        background: #f4f4e9;
         display: none;
       }
 
-      /* ── Confidence bar ── */
-      .confidence-bar {
-        height: 14px;
-        border-radius: 7px;
+      #resultCard {
+        display: none;
       }
 
-      /* ── Plastic badge ── */
-      .plastic-badge {
-        font-size: 1.6rem;
-        font-weight: 700;
-        padding: 0.45rem 1.6rem;
-        border-radius: 2rem;
-        letter-spacing: 1px;
+      #placeholderCard {
+        display: block;
       }
 
-      /* ── AI advice box ── */
-      .ai-advice-box {
-        background: linear-gradient(135deg, #e8f5e9, var(--teal-light));
-        border-left: 4px solid var(--teal);
-        border-radius: 0.5rem;
-        padding: 1rem 1.1rem;
-        line-height: 1.7;
-      }
-
-      /* ── Loading spinner ── */
       #loadingSpinner {
         display: none;
       }
 
-      /* ── Map ── */
       #map {
-        height: 420px;
-        border-radius: 0 0 1.25rem 1.25rem;
+        height: 380px;
         display: none;
       }
+
       #mapPlaceholder {
-        padding: 3rem 1rem;
-        text-align: center;
+        height: 380px;
       }
+
       #mapStatusMsg {
-        padding: 1rem;
-        text-align: center;
         display: none;
       }
 
-      /* ── Result / placeholder card ── */
-      #resultCard {
+      #captureCanvas {
         display: none;
       }
-      #placeholderCard {
-        text-align: center;
-        padding: 2.5rem 1rem;
-      }
 
-      /* ── Responsive tweaks ── */
-      @media (max-width: 576px) {
-        .app-header {
-          padding: 1.25rem 0.75rem 1rem;
+      @media (max-width: 768px) {
+        #videoPreview,
+        #dropZone {
+          min-height: 300px;
         }
-        .card-body {
-          padding: 1rem;
+
+        #modeTabs {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.75rem;
+        }
+
+        #modeTabs > button {
+          width: 100%;
+          justify-content: center;
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+          font-size: 0.95rem;
+        }
+
+        #map {
+          height: 380px;
         }
       }
     </style>
+
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary": "#ffffff",
+              "on-surface-variant": "#3f4a3c",
+              "surface-dim": "#dadbd0",
+              error: "#ba1a1a",
+              "primary-container": "#4caf50",
+              outline: "#6f7a6b",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#5b4137",
+              "tertiary-fixed": "#ffdbce",
+              "surface-container-highest": "#e3e3d8",
+              "on-primary-fixed-variant": "#005313",
+              "on-secondary-fixed": "#1b1d0e",
+              "on-secondary-container": "#636451",
+              surface: "#fafaef",
+              "on-error-container": "#93000a",
+              "on-tertiary-fixed": "#2b160f",
+              "secondary-fixed-dim": "#c8c8b0",
+              "surface-container-high": "#e9e9de",
+              "tertiary-fixed-dim": "#e4beb2",
+              "on-surface": "#1a1c16",
+              "on-primary-container": "#003c0b",
+              secondary: "#5e604d",
+              "error-container": "#ffdad6",
+              "primary-fixed-dim": "#78dc77",
+              "inverse-primary": "#78dc77",
+              primary: "#006e1c",
+              "inverse-surface": "#2f312a",
+              "surface-variant": "#e3e3d8",
+              "surface-bright": "#fafaef",
+              "on-primary-fixed": "#002204",
+              "outline-variant": "#becab9",
+              "tertiary-container": "#b69488",
+              "secondary-container": "#e1e1c9",
+              "on-secondary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed": "#94f990",
+              "inverse-on-surface": "#f1f1e6",
+              background: "#fafaef",
+              "surface-tint": "#006e1c",
+              "on-secondary-fixed-variant": "#474836",
+              "surface-container-low": "#f4f4e9",
+              tertiary: "#75584d",
+              "secondary-fixed": "#e4e4cc",
+              "surface-container": "#eeeee4",
+              "on-tertiary-container": "#452d25",
+              "on-background": "#1a1c16",
+              "on-tertiary": "#ffffff",
+            },
+            fontFamily: {
+              headline: ["Plus Jakarta Sans"],
+              body: ["Be Vietnam Pro"],
+              label: ["Be Vietnam Pro"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "2rem",
+              xl: "3rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
   </head>
-  <body>
-    <!-- ╔══════════════════════╗
-       ║      HEADER          ║
-       ╚══════════════════════╝ -->
-    <div class="app-header">
-      <h1>♻️ AI Plastic Waste Classifier</h1>
-      <p>Identify plastic types &amp; recycle responsibly with AI</p>
-    </div>
 
-    <div class="container pb-5">
-      <div class="row g-4">
-        <!-- ╔══════════════════════════╗
-           ║   INPUT CARD (left col)  ║
-           ╚══════════════════════════╝ -->
-        <div class="col-lg-6">
-          <div class="card h-100">
-            <div class="card-header d-flex align-items-center gap-2">
-              <i class="bi bi-camera2"></i>
-              <span>Classify Plastic</span>
-            </div>
-
-            <div class="card-body">
-              <!-- Mode switch -->
-              <ul
-                class="nav mode-pill justify-content-center mb-3"
-                id="modeTabs"
-              >
-                <li class="nav-item">
-                  <button
-                    class="nav-link active"
-                    id="cameraTabBtn"
-                    onclick="switchMode('camera')"
-                  >
-                    <i class="bi bi-camera me-1"></i>Camera
-                  </button>
-                </li>
-                <li class="nav-item">
-                  <button
-                    class="nav-link"
-                    id="uploadTabBtn"
-                    onclick="switchMode('upload')"
-                  >
-                    <i class="bi bi-upload me-1"></i>Upload
-                  </button>
-                </li>
-              </ul>
-
-              <!-- ── Camera section ── -->
-              <div id="cameraMode">
-                <video id="videoPreview" autoplay playsinline muted></video>
-                <div class="d-grid mt-3">
-                  <button
-                    class="btn btn-success btn-lg"
-                    id="captureBtn"
-                    onclick="captureAndClassify()"
-                  >
-                    <i class="bi bi-camera-fill me-2"></i>Capture &amp; Classify
-                  </button>
-                </div>
-              </div>
-
-              <!-- ── Upload section ── -->
-              <div id="uploadMode" style="display: none">
-                <div
-                  id="dropZone"
-                  class="text-center p-4"
-                  ondragover="handleDragOver(event)"
-                  ondragleave="handleDragLeave()"
-                  ondrop="handleDrop(event)"
-                >
-                  <i class="bi bi-cloud-upload fs-1 text-success"></i>
-                  <p class="text-muted mt-2 mb-1">
-                    Drag &amp; drop an image here, or
-                  </p>
-                  <label class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-folder2-open me-1"></i>Browse File
-                    <input
-                      type="file"
-                      id="fileInput"
-                      accept=".jpg,.jpeg,.png"
-                      style="display: none"
-                      onchange="handleFileSelect(event)"
-                    />
-                  </label>
-                  <p class="text-muted small mt-2 mb-0">
-                    Accepted: JPG, JPEG, PNG
-                  </p>
-                </div>
-                <img id="imagePreview" alt="Selected image preview" />
-                <div class="d-grid mt-3">
-                  <button
-                    class="btn btn-success btn-lg"
-                    id="classifyUploadBtn"
-                    onclick="classifyUpload()"
-                    disabled
-                  >
-                    <i class="bi bi-search me-2"></i>Classify Image
-                  </button>
-                </div>
-              </div>
-
-              <!-- ── Loading spinner ── -->
-              <div class="text-center mt-3" id="loadingSpinner">
-                <div class="spinner-border text-success" role="status">
-                  <span class="visually-hidden">Classifying…</span>
-                </div>
-                <p class="text-muted small mt-2">Analysing plastic type…</p>
-              </div>
-            </div>
-            <!-- /card-body -->
-          </div>
-          <!-- /card -->
+  <body class="text-on-surface selection:bg-primary/20">
+    <header
+      class="w-full top-0 sticky z-50 bg-[#fafaef] shadow-[0_40px_60px_-15px_rgba(26,28,22,0.04)]"
+    >
+      <nav class="relative flex items-center px-8 py-4 max-w-7xl mx-auto">
+        <div
+          class="text-2xl font-bold text-[#006e1c] tracking-tighter font-['Plus_Jakarta_Sans']"
+        >
+          AI Plastic Waste Classifier
         </div>
-        <!-- /col -->
+        <div
+          class="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-12 lg:gap-14 font-['Plus_Jakarta_Sans'] font-medium tracking-tight"
+        >
+          <a
+            class="text-stone-600 hover:text-[#006e1c] transition-all duration-300 ease-out"
+            href="#homeSection"
+            >Home</a
+          >
+          <a
+            class="text-stone-600 hover:text-[#006e1c] transition-all duration-300 ease-out"
+            href="#classifierSection"
+            >Classify</a
+          >
+          <a
+            class="text-stone-600 hover:text-[#006e1c] transition-all duration-300 ease-out"
+            href="#locationsSection"
+            >Centre</a
+          >
+        </div>
+      </nav>
+    </header>
 
-        <!-- ╔═══════════════════════════╗
-           ║   RESULT CARD (right col) ║
-           ╚═══════════════════════════╝ -->
-        <div class="col-lg-6">
-          <!-- Result (shown after prediction) -->
-          <div class="card" id="resultCard">
-            <div class="card-header d-flex align-items-center gap-2">
-              <i class="bi bi-bar-chart-fill"></i>
-              <span>Classification Result</span>
-            </div>
-            <div class="card-body">
-              <!-- Plastic type + confidence -->
-              <div class="text-center mb-3">
-                <span
-                  class="badge bg-success plastic-badge"
-                  id="plasticTypeLabel"
-                  >—</span
-                >
-                <div class="mt-3">
-                  <div class="d-flex justify-content-between mb-1">
-                    <small class="fw-semibold text-muted">Confidence</small>
-                    <small class="fw-bold text-success" id="confidenceText"
-                      >0%</small
-                    >
-                  </div>
-                  <div class="progress confidence-bar">
-                    <div
-                      class="progress-bar bg-success transition-all"
-                      id="confidenceBar"
-                      role="progressbar"
-                      style="width: 0%"
-                      aria-valuenow="0"
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <hr class="my-3" />
-
-              <!-- Tab group: Reuse | Recycle | AI Advice -->
-              <ul class="nav nav-tabs" id="resultNavTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link active"
-                    id="reuse-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#reuseTab"
-                    type="button"
-                    role="tab"
-                  >
-                    <i class="bi bi-recycle me-1"></i>Reuse
-                  </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    id="recycle-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#recycleTab"
-                    type="button"
-                    role="tab"
-                  >
-                    <i class="bi bi-trash3 me-1"></i>Recycle
-                  </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    id="ai-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#aiTab"
-                    type="button"
-                    role="tab"
-                  >
-                    <i class="bi bi-stars me-1"></i>AI Advice
-                  </button>
-                </li>
-              </ul>
-
-              <div class="tab-content pt-3">
-                <div
-                  class="tab-pane fade show active"
-                  id="reuseTab"
-                  role="tabpanel"
-                >
-                  <ul class="list-unstyled mb-0" id="reuseList"></ul>
-                </div>
-                <div class="tab-pane fade" id="recycleTab" role="tabpanel">
-                  <p class="mb-0" id="recycleInfo"></p>
-                </div>
-                <div class="tab-pane fade" id="aiTab" role="tabpanel">
-                  <div class="ai-advice-box">
-                    <div class="d-flex align-items-start gap-2">
-                      <i
-                        class="bi bi-stars text-teal fs-5 mt-1 flex-shrink-0"
-                        style="color: var(--teal)"
-                      ></i>
-                      <div id="aiAdviceText" style="font-size: 0.92rem"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- /card-body -->
+    <main class="max-w-7xl mx-auto px-6 md:px-12 py-12 space-y-24">
+      <section
+        id="homeSection"
+        class="flex flex-col md:flex-row gap-12 items-center scroll-mt-24"
+      >
+        <div class="flex-1 space-y-6">
+          <h1
+            class="text-display-lg text-5xl md:text-6xl font-extrabold tracking-tight text-on-surface leading-tight"
+          >
+            Make smarter
+            <span class="text-primary italic">recycling</span> decisions.
+          </h1>
+          <p class="text-lg text-on-secondary-container max-w-lg">
+            Identify plastic types instantly using our AI classifier and find
+            the most sustainable way to dispose of or reuse your waste.
+          </p>
+          <div class="flex flex-wrap gap-4 pt-4">
+            <button
+              onclick="goToClassifier('camera')"
+              class="scroll-cta px-8 py-4 organic-gradient rounded-full text-white font-semibold flex items-center gap-2 transition-transform hover:scale-105"
+              type="button"
+            >
+              <span class="material-symbols-outlined">south</span>
+              Start Classifying
+            </button>
+            <button
+              onclick="scrollToMapSection()"
+              class="px-8 py-4 bg-surface-container-high text-on-secondary-container rounded-full font-semibold flex items-center gap-2 hover:bg-surface-container-highest transition-colors"
+              type="button"
+            >
+              <span class="material-symbols-outlined">map</span>
+              Locate Recycling centers
+            </button>
           </div>
-          <!-- /resultCard -->
+        </div>
 
-          <!-- Placeholder (before any prediction) -->
-          <div class="card" id="placeholderCard">
-            <div class="card-body">
-              <i class="bi bi-arrow-left-circle display-4 text-muted"></i>
-              <p class="text-muted mt-3 mb-0">
+        <div class="flex-1 w-full max-w-md">
+          <div
+            class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-low shadow-2xl border-4 border-white/50"
+          >
+            <img
+              alt="A clear plastic bottle being recycled"
+              class="w-full h-full object-cover"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGUcTbhov1unR4YwaN9GGurBJjKjgYFlipJ4tvgjBqVUErLc2gZRi2h5yWANcIKK799Kk2OmquPJtZhiLtu6pqtWKFIKBvwSEU-XSqQzzIX5CR3khJ51MBYALmTDNtb8dUYhMnUgAv-qlWwToaVNsXvML2cP8SL4XoPcBECBfuv1W_BYGEeIZkw2DEgz7cvk9pQjst4zg2ZpZOySMlZTIhUVbQEtxSOs5MW7-h9DU50T0j4hU97MfZnnkocrxFYbz-gDNkOQiTN2Oa"
+            />
+            <div class="absolute inset-0 organic-gradient/10"></div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="classifierSection"
+        class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24"
+      >
+        <div class="lg:col-span-7 space-y-8">
+          <div
+            class="bg-surface-container-low rounded-xl p-8 border-dashed border-2 border-outline-variant/30 min-h-[400px]"
+          >
+            <div class="flex flex-wrap gap-3 mb-6" id="modeTabs">
+              <button
+                id="cameraTabBtn"
+                onclick="switchMode('camera')"
+                class="hero-action active px-6 py-3 rounded-full font-semibold flex items-center gap-2 transition-transform hover:scale-105"
+                type="button"
+              >
+                <span class="material-symbols-outlined">photo_camera</span>
+                Use Camera
+              </button>
+              <button
+                id="uploadTabBtn"
+                onclick="switchMode('upload')"
+                class="hero-action px-6 py-3 bg-surface-container-high text-on-secondary-container rounded-full font-semibold flex items-center gap-2 hover:bg-surface-container-highest transition-colors"
+                type="button"
+              >
+                <span class="material-symbols-outlined">upload_file</span>
+                Upload Image
+              </button>
+            </div>
+
+            <div id="cameraMode" class="space-y-5">
+              <video id="videoPreview" autoplay playsinline muted></video>
+              <button
+                id="captureBtn"
+                onclick="captureAndClassify()"
+                class="mt-4 px-6 py-3 organic-gradient text-on-primary rounded-full font-semibold flex items-center gap-2"
+                type="button"
+              >
+                <span class="material-symbols-outlined">add_a_photo</span>
+                Capture and Classify
+              </button>
+            </div>
+
+            <div id="uploadMode" style="display: none">
+              <div
+                id="dropZone"
+                class="flex flex-col items-center justify-center min-h-[320px] text-center rounded-xl"
+                role="button"
+                tabindex="0"
+                aria-label="Upload plastic image"
+                onclick="openUploadPicker(event)"
+                onkeydown="onUploadZoneKeydown(event)"
+                ondragover="handleDragOver(event)"
+                ondragleave="handleDragLeave()"
+                ondrop="handleDrop(event)"
+              >
+                <div
+                  class="w-24 h-24 bg-surface-container-high rounded-full flex items-center justify-center mb-6"
+                >
+                  <span class="material-symbols-outlined text-4xl text-primary"
+                    >eco</span
+                  >
+                </div>
+                <h3 class="text-2xl font-bold mb-2">Drop your waste here</h3>
+                <p class="text-on-secondary-container mb-4">
+                  Drag and drop or click to scan your plastic items
+                </p>
+                <label
+                  class="px-6 py-3 bg-surface-container-highest rounded-full text-primary font-medium flex items-center gap-2 cursor-pointer"
+                >
+                  <span class="material-symbols-outlined">upload_file</span>
+                  Browse
+                  <input
+                    type="file"
+                    id="fileInput"
+                    accept=".jpg,.jpeg,.png"
+                    style="display: none"
+                    onchange="handleFileSelect(event)"
+                  />
+                  <input
+                    type="file"
+                    id="folderInput"
+                    accept=".jpg,.jpeg,.png"
+                    webkitdirectory
+                    directory
+                    multiple
+                    style="display: none"
+                    onchange="handleFolderSelect(event)"
+                  />
+                </label>
+                <p class="text-xs text-on-secondary-container mt-3">
+                  Accepted: JPG, JPEG, PNG
+                </p>
+                <p class="text-xs text-on-secondary-container/80 mt-1">
+                  Click to upload images, or double-click to select a folder.
+                </p>
+              </div>
+              <img
+                id="imagePreview"
+                alt="Selected image preview"
+                class="mt-4"
+              />
+              <button
+                id="classifyUploadBtn"
+                onclick="classifyUpload()"
+                class="mt-4 px-6 py-3 organic-gradient text-on-primary rounded-full font-semibold flex items-center gap-2"
+                type="button"
+                disabled
+              >
+                <i class="bi bi-search"></i>
+                Classify Image
+              </button>
+            </div>
+
+            <div id="loadingSpinner" class="text-center pt-4">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Classifying...</span>
+              </div>
+              <p class="text-sm text-on-secondary-container mt-2 mb-0">
+                Analysing plastic type...
+              </p>
+            </div>
+          </div>
+
+          <div
+            id="ecoTipsSection"
+            class="grid grid-cols-1 md:grid-cols-2 gap-6 scroll-mt-24"
+          >
+            <div class="bg-tertiary-container/20 p-8 rounded-xl space-y-4">
+              <div class="flex items-center gap-3 text-on-tertiary-container">
+                <span class="material-symbols-outlined">lightbulb</span>
+                <span class="font-bold tracking-widest text-xs uppercase"
+                  >Smart Eco Tip</span
+                >
+              </div>
+              <p
+                id="smartEcoTipText"
+                class="text-on-tertiary-container font-medium"
+              >
+                {{ home_tip or 'Carry a reusable bottle for one day each week to
+                cut single-use plastic waste.' }}
+              </p>
+            </div>
+            <div class="bg-secondary-container/30 p-8 rounded-xl space-y-4">
+              <div class="flex items-center gap-3 text-on-secondary-container">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <span class="font-bold tracking-widest text-xs uppercase"
+                  >Fun Fact</span
+                >
+              </div>
+              <p
+                id="funFactText"
+                class="text-on-secondary-container font-medium"
+              >
+                {{ home_fact or 'A clean, sorted plastic item is far more likely
+                to be recycled than a contaminated one.' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 space-y-6">
+          <div
+            id="resultCard"
+            class="bg-surface-container-lowest rounded-xl shadow-[0_40px_60px_-15px_rgba(26,28,22,0.06)] overflow-hidden"
+          >
+            <div class="p-8 space-y-8">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span
+                    class="label-md bg-primary/10 text-primary px-3 py-1 rounded-full font-bold text-xs tracking-widest uppercase"
+                    >Result</span
+                  >
+                  <h2 class="text-3xl font-bold mt-2" id="plasticTypeLabel">
+                    PET - Type 1
+                  </h2>
+                </div>
+                <div class="text-right">
+                  <div
+                    class="text-primary font-bold text-2xl"
+                    id="confidenceText"
+                  >
+                    98%
+                  </div>
+                  <div
+                    class="text-xs text-on-secondary-container uppercase tracking-widest font-semibold"
+                  >
+                    Confidence
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden confidence-bar"
+              >
+                <div
+                  class="organic-gradient h-full rounded-full progress-bar"
+                  id="confidenceBar"
+                  style="width: 98%"
+                ></div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="space-y-3">
+                  <h4 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary"
+                      >recycling</span
+                    >
+                    Recycling Instructions
+                  </h4>
+                  <ul
+                    id="recycleInfo"
+                    class="text-on-secondary-container text-sm mt-2 space-y-2 list-disc pl-7 ml-1 marker:text-primary"
+                  ></ul>
+                </div>
+
+                <div class="space-y-3">
+                  <h4 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-tertiary"
+                      >volunteer_activism</span
+                    >
+                    Reuse Ideas
+                  </h4>
+                  <ul
+                    class="text-on-secondary-container text-sm mt-2 space-y-2 list-disc pl-7 ml-1 marker:text-tertiary"
+                    id="reuseList"
+                  ></ul>
+                </div>
+
+                <div class="space-y-3">
+                  <h4 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary"
+                      >auto_awesome</span
+                    >
+                    AI Advice
+                  </h4>
+                  <div
+                    class="bg-surface-container-low p-4 rounded-lg ai-advice-box"
+                  >
+                    <p
+                      id="aiAdviceText"
+                      class="text-sm mb-0 font-headline font-semibold tracking-wide text-[#2f5130] leading-relaxed"
+                    >
+                      AI advice unavailable.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                class="w-full py-4 bg-primary text-on-primary rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                onclick="scrollToMapSection()"
+                type="button"
+              >
+                <span class="material-symbols-outlined">map</span>
+                Locate recycling centres
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="placeholderCard"
+            class="bg-surface-container-lowest rounded-xl shadow-[0_40px_60px_-15px_rgba(26,28,22,0.06)] overflow-hidden"
+          >
+            <div class="p-8 text-center text-on-secondary-container">
+              <i class="bi bi-arrow-left-circle text-3xl"></i>
+              <p class="mt-4 mb-0">
                 Capture an image or upload a photo of a plastic item to see its
                 classification, reuse ideas, and AI-powered recycling advice.
               </p>
             </div>
           </div>
-        </div>
-        <!-- /col -->
 
-        <!-- ╔═══════════════════════╗
-           ║   MAP CARD (full width)║
-           ╚═══════════════════════╝ -->
-        <div class="col-12">
-          <div class="card">
-            <div
-              class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2"
-            >
-              <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-geo-alt-fill"></i>
-                <span>Nearby Recycling Centres</span>
-              </div>
-              <button
-                class="btn btn-sm btn-light fw-semibold"
-                onclick="findNearbyRecyclers()"
-              >
-                <i class="bi bi-geo-alt me-1"></i>Find Near Me
-              </button>
+          <div style="display: none">
+            <ul class="nav" id="resultNavTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="reuse-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#reuseTab"
+                  type="button"
+                  role="tab"
+                >
+                  Reuse
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="recycle-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#recycleTab"
+                  type="button"
+                  role="tab"
+                >
+                  Recycle
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="ai-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#aiTab"
+                  type="button"
+                  role="tab"
+                >
+                  AI Advice
+                </button>
+              </li>
+            </ul>
+            <div class="tab-content">
+              <div
+                class="tab-pane fade show active"
+                id="reuseTab"
+                role="tabpanel"
+              ></div>
+              <div class="tab-pane fade" id="recycleTab" role="tabpanel"></div>
+              <div class="tab-pane fade" id="aiTab" role="tabpanel"></div>
             </div>
-
-            <!-- Default placeholder -->
-            <div id="mapPlaceholder">
-              <i class="bi bi-map display-4 text-muted"></i>
-              <p class="text-muted mt-3">
-                Click <strong>Find Near Me</strong> to discover recycling
-                centres near your location.
-              </p>
-            </div>
-
-            <!-- Status / loading message -->
-            <div id="mapStatusMsg"></div>
-
-            <!-- Leaflet map (rendered on demand) -->
-            <div id="map"></div>
           </div>
-          <!-- /card -->
         </div>
-        <!-- /col -->
-      </div>
-      <!-- /row -->
-    </div>
-    <!-- /container -->
+      </section>
 
-    <!-- Shared hidden canvas for both camera capture and upload resize -->
+      <section id="locationsSection" class="space-y-8 scroll-mt-24">
+        <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+          <div class="space-y-2">
+            <h2 class="text-4xl font-extrabold tracking-tight">
+              Find Recycling Centres Near You
+            </h2>
+          </div>
+        </div>
+
+        <div
+          class="w-full rounded-xl overflow-hidden shadow-xl relative bg-surface-container-low"
+        >
+          <div
+            id="mapPlaceholder"
+            class="h-64 rounded-xl overflow-hidden relative transition-all duration-700"
+          >
+            <img
+              alt="Map"
+              class="w-full h-full object-cover"
+              data-alt="Stylized map showing recycling locations in a city area"
+              data-location="San Francisco"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqpj-D3wBX_MPZt7qbHDBeiJvMBtXND6KCrqr9HJMAQWh566GoPZpZVv55u8Om2N51dkSEnSFtQGppAtWVY_pWr0qTP-KT-GOX8VZ7ynrBp7G0wP7-Hrp27LYkQz2oXS6uQAUCW2SLs7GcCuTBvS_LyU9OepMBButnghfp3czbOzS7LafWhsmQ4S3P0aYlb1BhGAq7FThhBnRQbveZ_6X9n_cdSD89AZpvf7iRPXaB73o14bMZX1haaCBhol4Js6YyoobUAYHa1dvd"
+            />
+            <div class="absolute top-1/2 left-1/3 -translate-y-1/2">
+              <span
+                class="material-symbols-outlined text-primary text-4xl"
+                style="font-variation-settings: &quot;FILL&quot; 1"
+                >location_on</span
+              >
+            </div>
+            <div class="absolute top-1/4 left-2/3">
+              <span
+                class="material-symbols-outlined text-primary text-4xl"
+                style="font-variation-settings: &quot;FILL&quot; 1"
+                >location_on</span
+              >
+            </div>
+          </div>
+          <div
+            id="mapStatusMsg"
+            class="p-4 text-center bg-surface-container-high"
+          ></div>
+          <div id="map"></div>
+        </div>
+
+        <div class="pt-4 flex justify-center">
+          <button
+            class="w-full max-w-md py-4 bg-primary text-on-primary rounded-full font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            onclick="findNearbyRecyclers()"
+            type="button"
+          >
+            <span class="material-symbols-outlined">my_location</span>
+            Find Nearest Recycling Centres
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer
+      id="impactSection"
+      class="w-full rounded-t-[3rem] mt-20 bg-[#f4f4e9] scroll-mt-24"
+    >
+      <div class="px-12 py-10 max-w-7xl mx-auto text-center space-y-2">
+        <div
+          class="font-['Plus_Jakarta_Sans'] font-bold text-[#5e604d] text-xl"
+        >
+          AI Plastic waste classifier
+        </div>
+        <p class="font-['Be_Vietnam_Pro'] text-sm text-stone-600">
+          © 2024 AI Plastic waste classifier. Rooted in Sustainability.
+        </p>
+        <p class="font-['Be_Vietnam_Pro'] text-sm text-stone-600">
+          Built by
+          <a
+            href="https://www.linkedin.com/in/nikeshparihar26/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-[#006e1c] hover:underline"
+            >Nikesh Parihar</a
+          >, made with love ❤️
+        </p>
+      </div>
+    </footer>
+
     <canvas id="captureCanvas"></canvas>
 
-    <!-- Bootstrap 5 Bundle (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- App modules — order matters: app.js first (shared helpers) -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/camera.js') }}"></script>
     <script src="{{ url_for('static', filename='js/upload.js') }}"></script>

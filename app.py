@@ -4,8 +4,7 @@ import numpy as np
 import cv2
 import base64
 from tensorflow.keras.models import load_model
-from plastic_info import plastic_info
-from services.gemini_service import get_recycling_advice
+from services.gemini_service import get_classification_guidance, get_home_insights
 from services.recycler_service import get_nearby_recyclers
 
 try:
@@ -33,7 +32,12 @@ CLASS_NAMES = ['HDPE', 'LDPE', 'OTHER', 'PET', 'PP', 'PS', 'PVC']
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    insights = get_home_insights()
+    return render_template(
+        "index.html",
+        home_tip=insights.get("tip", ""),
+        home_fact=insights.get("fact", ""),
+    )
 
 
 @app.route("/predict", methods=["POST"])
@@ -57,15 +61,14 @@ def predict():
         label = CLASS_NAMES[class_index]
         confidence = float(np.max(preds)) * 100
 
-        info = plastic_info[label]
-        ai_advice = get_recycling_advice(label, confidence)
+        guidance = get_classification_guidance(label, confidence)
 
         return jsonify({
             "type": label,
             "confidence": round(confidence, 2),
-            "reuse": info["reuse"],
-            "recycle": info["recycle"],
-            "ai_advice": ai_advice,
+            "reuse": guidance.get("reuse_ideas", []),
+            "recycle_instructions": guidance.get("recycling_instructions", []),
+            "ai_advice": guidance.get("ai_advice", ""),
         })
 
     except Exception as e:
@@ -92,6 +95,20 @@ def recyclers():
         return jsonify(results)
     except (KeyError, TypeError, ValueError) as e:
         return jsonify({"error": f"Invalid request: {e}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/home-insights", methods=["GET"])
+def home_insights():
+    try:
+        insights = get_home_insights()
+        response = jsonify({
+            "tip": insights.get("tip", ""),
+            "fact": insights.get("fact", ""),
+        })
+        response.headers["Cache-Control"] = "no-store"
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

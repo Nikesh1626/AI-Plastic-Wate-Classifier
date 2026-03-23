@@ -82,26 +82,43 @@ function displayResult(data) {
   const conf = parseFloat(data.confidence) || 0;
   document.getElementById("confidenceText").textContent = conf + "%";
   const bar = document.getElementById("confidenceBar");
-  bar.style.width = conf + "%";
-  bar.className = "progress-bar";
-  if (conf >= 75) bar.classList.add("bg-success");
-  else if (conf >= 45) bar.classList.add("bg-warning");
-  else bar.classList.add("bg-danger");
+  const boundedConf = Math.max(0, Math.min(100, conf));
+  bar.style.width = boundedConf + "%";
+  if (boundedConf >= 75) {
+    bar.style.background = "linear-gradient(135deg, #006e1c 0%, #4caf50 100%)";
+  } else if (boundedConf >= 45) {
+    bar.style.background = "linear-gradient(135deg, #8b7a09 0%, #d4b10b 100%)";
+  } else {
+    bar.style.background = "linear-gradient(135deg, #8a1c1c 0%, #d64545 100%)";
+  }
 
-  // Reuse list
+  // Reuse list (desi ideas shown in quotes)
   const reuseList = document.getElementById("reuseList");
   if (Array.isArray(data.reuse)) {
     reuseList.innerHTML = data.reuse
-      .map(
-        (item) =>
-          `<li class="mb-1"><i class="bi bi-check-circle-fill text-success me-2"></i>${escapeHtml(item)}</li>`,
-      )
+      .map((item) => {
+        const cleanItem = String(item)
+          .trim()
+          .replace(/^"+|"+$/g, "");
+        return `<li class="mb-0.5 leading-6">"${escapeHtml(cleanItem)}"</li>`;
+      })
       .join("");
   }
 
-  // Recycle info
-  document.getElementById("recycleInfo").innerHTML =
-    `<i class="bi bi-recycle text-success me-2"></i>${escapeHtml(data.recycle || "")}`;
+  // Recycling instructions (2-3 pointwise)
+  const recycleInfo = document.getElementById("recycleInfo");
+  const recycleItems = Array.isArray(data.recycle_instructions)
+    ? data.recycle_instructions
+    : [];
+
+  if (recycleItems.length) {
+    recycleInfo.innerHTML = recycleItems
+      .map((item) => `<li class="mb-0.5 leading-6">${escapeHtml(item)}</li>`)
+      .join("");
+  } else {
+    recycleInfo.innerHTML =
+      '<li class="mb-0.5 leading-6">Recycling instructions are currently unavailable.</li>';
+  }
 
   // AI advice — Gemini markdown converted to safe HTML
   const aiText = document.getElementById("aiAdviceText");
@@ -128,4 +145,11 @@ function showPredictionError(safeMessage) {
     <p class="text-muted small">Check the console for details.</p>
   `;
   placeholderCard.style.display = "block";
+}
+
+function scrollToMapSection() {
+  const locationsSection = document.getElementById("locationsSection");
+  if (locationsSection) {
+    locationsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }

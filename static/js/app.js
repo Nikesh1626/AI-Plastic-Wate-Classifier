@@ -29,12 +29,19 @@ function markdownToHtml(raw) {
  * Sends a base64-encoded image to /predict and renders the result.
  * @param {string} imageData  base64 data-URL (image/jpeg)
  */
-function sendForPrediction(imageData) {
+async function sendForPrediction(imageData) {
   const spinner = document.getElementById("loadingSpinner");
   const resultCard = document.getElementById("resultCard");
   const placeholderCard = document.getElementById("placeholderCard");
   const captureBtn = document.getElementById("captureBtn");
   const classifyUploadBtn = document.getElementById("classifyUploadBtn");
+
+  if (window.authRequireUser) {
+    const allowed = await window.authRequireUser();
+    if (!allowed) return;
+  }
+
+  const authToken = window.getAuthToken ? window.getAuthToken() : "";
 
   // Show spinner, lock buttons
   spinner.style.display = "block";
@@ -45,7 +52,10 @@ function sendForPrediction(imageData) {
 
   fetch("/predict", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: authToken ? `Bearer ${authToken}` : "",
+    },
     body: JSON.stringify({ image: imageData }),
   })
     .then((res) => res.json())
@@ -55,6 +65,12 @@ function sendForPrediction(imageData) {
       if (classifyUploadBtn) classifyUploadBtn.disabled = false;
 
       if (data.error) {
+        if (
+          data.error.toLowerCase().includes("authentication") &&
+          window.showAuthModal
+        ) {
+          window.showAuthModal();
+        }
         showPredictionError(escapeHtml(data.error));
         return;
       }

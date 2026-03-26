@@ -67,6 +67,14 @@
         box-shadow: 0 18px 34px -20px rgba(0, 110, 28, 0.8);
       }
 
+      .auth-modal-backdrop {
+        background: rgba(26, 28, 22, 0.5);
+      }
+
+      #profileMenu {
+        min-width: 210px;
+      }
+
       #cameraMode,
       #uploadMode {
         width: 100%;
@@ -260,6 +268,44 @@
             href="#locationsSection"
             >Centre</a
           >
+        </div>
+        <div class="ml-auto relative" id="authNavArea">
+          <button
+            id="authSignInBtn"
+            class="px-5 py-2.5 bg-surface-container-high text-on-secondary-container rounded-full font-semibold hover:bg-surface-container-highest transition-colors"
+            type="button"
+          >
+            Sign in
+          </button>
+
+          <button
+            id="profileBtn"
+            class="hidden w-10 h-10 rounded-xl bg-surface-container-high text-on-secondary-container hover:bg-surface-container-highest items-center justify-center transition-colors"
+            type="button"
+            aria-label="Open profile menu"
+            aria-expanded="false"
+          >
+            <span class="material-symbols-outlined">account_circle</span>
+          </button>
+
+          <div
+            id="profileMenu"
+            class="hidden absolute right-0 mt-2 bg-white border border-outline-variant/40 rounded-lg shadow-lg p-2.5 space-y-2"
+          >
+            <p
+              id="profileEmail"
+              class="text-xs text-on-secondary-container break-all px-2 leading-5"
+            >
+              signedin@example.com
+            </p>
+            <button
+              id="profileSignOutBtn"
+              class="w-full px-3 py-2 rounded-md bg-surface-container-high text-on-secondary-container text-sm font-semibold hover:bg-surface-container-highest transition-colors"
+              type="button"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </nav>
     </header>
@@ -707,7 +753,7 @@
           AI Plastic waste classifier
         </div>
         <p class="font-['Be_Vietnam_Pro'] text-sm text-stone-600">
-          © 2024 AI Plastic waste classifier. Rooted in Sustainability.
+          © 2026 AI Plastic waste classifier. Rooted in Sustainability.
         </p>
         <p class="font-['Be_Vietnam_Pro'] text-sm text-stone-600">
           Built by
@@ -724,9 +770,51 @@
 
     <canvas id="captureCanvas"></canvas>
 
+    <div
+      id="authModal"
+      class="fixed inset-0 z-[60] hidden items-center justify-center p-6 auth-modal-backdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-7 space-y-5"
+      >
+        <div class="space-y-2">
+          <h3 class="text-2xl font-bold text-on-surface">Sign in required</h3>
+          <p class="text-on-secondary-container text-sm">
+            Please continue with Google to classify plastics and find nearby
+            recycling centres.
+          </p>
+        </div>
+        <button
+          id="googleSignInBtn"
+          class="w-full px-6 py-3 organic-gradient text-on-primary rounded-full font-semibold flex items-center justify-center gap-3"
+          type="button"
+        >
+          <i class="bi bi-google"></i>
+          Continue with Google
+        </button>
+        <button
+          id="authModalCloseBtn"
+          class="w-full px-6 py-3 bg-surface-container-high text-on-secondary-container rounded-full font-semibold"
+          type="button"
+        >
+          Not now
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="supabaseConfig"
+      data-url="{{ supabase_url }}"
+      data-anon-key="{{ supabase_anon_key }}"
+      style="display: none"
+    ></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/camera.js') }}"></script>
     <script src="{{ url_for('static', filename='js/upload.js') }}"></script>

@@ -62,10 +62,17 @@ function getRecyclingIcon() {
  * Requests the user's geolocation, renders the map, and fetches nearby
  * recycling centres from the /recyclers backend endpoint.
  */
-function findNearbyRecyclers() {
+async function findNearbyRecyclers() {
   const placeholder = document.getElementById("mapPlaceholder");
   const statusMsg = document.getElementById("mapStatusMsg");
   const mapEl = document.getElementById("map");
+
+  if (window.authRequireUser) {
+    const allowed = await window.authRequireUser();
+    if (!allowed) return;
+  }
+
+  const authToken = window.getAuthToken ? window.getAuthToken() : "";
 
   if (!initialMapPlaceholderHtml && placeholder) {
     initialMapPlaceholderHtml = placeholder.innerHTML;
@@ -96,11 +103,23 @@ function findNearbyRecyclers() {
 
       fetch("/recyclers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authToken ? `Bearer ${authToken}` : "",
+        },
         body: JSON.stringify({ latitude: lat, longitude: lon }),
       })
         .then((res) => res.json())
         .then((data) => {
+          if (
+            data?.error &&
+            String(data.error).toLowerCase().includes("authentication")
+          ) {
+            if (window.showAuthModal) window.showAuthModal();
+            statusMsg.style.display = "none";
+            return;
+          }
+
           if (!Array.isArray(data)) {
             statusMsg.style.display = "none";
             showMapError(data.error || "Unexpected response from server.");

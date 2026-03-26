@@ -1,9 +1,11 @@
 import os
 import logging
+from functools import wraps
 from flask import Flask, render_template, request, jsonify
 import numpy as np
 import cv2
 import base64
+import requests
 from tensorflow.keras.models import load_model
 from services.gemini_service import get_classification_guidance, get_home_insights
 from services.recycler_service import get_nearby_recyclers
@@ -31,9 +33,61 @@ FLASK_DEBUG = os.environ.get("FLASK_DEBUG", "false").strip().lower() in {
     "yes",
     "on",
 }
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+SUPABASE_USERINFO_URL = (
+    f"{SUPABASE_URL.rstrip('/')}/auth/v1/user" if SUPABASE_URL else ""
+)
 model = load_model(MODEL_PATH)
 # ⚠️ MUST MATCH training order exactly
 CLASS_NAMES = ['HDPE', 'LDPE', 'OTHER', 'PET', 'PP', 'PS', 'PVC']
+
+
+def _extract_bearer_token() -> str:
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return ""
+    return auth_header.split(" ", 1)[1].strip()
+
+
+def _get_authenticated_user(token: str):
+    if not SUPABASE_USERINFO_URL or not SUPABASE_ANON_KEY:
+        app.logger.error("Supabase auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.")
+        return None
+
+    try:
+        response = requests.get(
+            SUPABASE_USERINFO_URL,
+            headers={
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": f"Bearer {token}",
+            },
+            timeout=8,
+        )
+        if response.status_code != 200:
+            return None
+        payload = response.json()
+        if isinstance(payload, dict) and payload.get("id"):
+            return payload
+    except Exception:
+        app.logger.exception("Supabase token verification failed")
+    return None
+
+
+def require_auth(view_func):
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        token = _extract_bearer_token()
+        if not token:
+            return jsonify({"error": "Authentication required."}), 401
+
+        user = _get_authenticated_user(token)
+        if not user:
+            return jsonify({"error": "Invalid or expired authentication token."}), 401
+
+        return view_func(*args, **kwargs)
+
+    return wrapper
 
 
 @app.route("/")
@@ -43,10 +97,13 @@ def index():
         "index.html",
         home_tip=insights.get("tip", ""),
         home_fact=insights.get("fact", ""),
+        supabase_url=SUPABASE_URL,
+        supabase_anon_key=SUPABASE_ANON_KEY,
     )
 
 
 @app.route("/predict", methods=["POST"])
+@require_auth
 def predict():
     try:
         body = request.get_json(silent=True) or {}
@@ -88,6 +145,7 @@ def predict():
 
 
 @app.route("/recyclers", methods=["POST"])
+@require_auth
 def recyclers():
     try:
         body = request.get_json(silent=True) or {}

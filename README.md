@@ -14,7 +14,6 @@ A Flask + TensorFlow web app that classifies plastic waste from camera/upload im
 - Project Structure
 - How It Works
 - Screenshots
-- Demo
 - Architecture
 - Authentication Flow (Google via Supabase)
 - API Endpoints
@@ -23,9 +22,6 @@ A Flask + TensorFlow web app that classifies plastic waste from camera/upload im
 - Run Locally
 - Deployment Notes
 - Troubleshooting
-- Security Notes
-- FAQ
-- Roadmap
 - Acknowledgments
 - Maintainer
 - Contributing
@@ -40,10 +36,6 @@ A Flask + TensorFlow web app that classifies plastic waste from camera/upload im
   - AI advice
 - Nearby recycler discovery using geolocation + Overpass API.
 - Google-only authentication using Supabase.
-- Basic production hardening:
-  - Request size limit
-  - Security headers
-  - Generic 500 error responses
 
 ## Tech Stack
 - Backend: Flask
@@ -101,10 +93,6 @@ A Flask + TensorFlow web app that classifies plastic waste from camera/upload im
 
 ### Map
 ![Map](docs/Screenshots/Map.png)
-
-## Demo
-- Local URL: `http://localhost:5000`
-- Public demo: Add your deployed URL here (Render/Vercel frontend + backend host).
 
 ## Authentication Flow (Google via Supabase)
 - Public pages can load without sign-in.
@@ -240,28 +228,6 @@ gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 180
 ### 5) Camera not opening on mobile LAN
 - Some mobile browsers restrict camera on non-HTTPS origins.
 - Use upload mode on HTTP LAN or use an HTTPS tunnel for camera testing.
-
-## Security Notes
-- Never commit `.env`.
-- Use only Supabase anon key in frontend/browser contexts.
-- Never expose Supabase service_role or Google OAuth secrets.
-- Rotate keys immediately if accidentally exposed.
-
-## FAQ
-### Why does login work only for specific users in Google OAuth testing mode?
-Google only allows configured test users until you publish the OAuth consent screen to production.
-
-### Why do I get 401 on `/predict` or `/recyclers`?
-The route is protected. Ensure the user is signed in and a valid bearer token is being sent.
-
-### Can I run this without Supabase auth?
-Current route protection expects Supabase auth for protected endpoints.
-
-## Roadmap
-- Add prediction history per user.
-- Add unit/integration tests for API routes.
-- Add CI for linting/tests.
-- Improve recycler query fallback and caching.
 
 ## Acknowledgments
 - TensorFlow/Keras for model inference tooling

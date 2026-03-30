@@ -156,8 +156,8 @@ Flask -> Supabase `/auth/v1/user` (token verification)
 
 ### Installation (Windows PowerShell)
 ```powershell
-git clone https://github.com/Nikesh1626/ML-miniproject2.git
-cd ML-miniproject2
+git clone https://github.com/Nikesh1626/AI-Plastic-Wate-Classifier.git
+cd AI-Plastic-Wate-Classifier
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -165,8 +165,8 @@ pip install -r requirements.txt
 
 ### Installation (Linux/macOS)
 ```bash
-git clone https://github.com/Nikesh1626/ML-miniproject2.git
-cd ML-miniproject2
+git clone https://github.com/Nikesh1626/AI-Plastic-Wate-Classifier.git
+cd AI-Plastic-Wate-Classifier
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
